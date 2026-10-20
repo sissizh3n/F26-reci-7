@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { matchGuess } from '../src/wordle';
-import { match } from 'node:assert';
 
 // Recitation Part 1: follow along with your TA, filling in the todos below.
 // Problem set Task 1: keep adding properties until `npm run mutants:wordle`
@@ -13,47 +12,53 @@ import { match } from 'node:assert';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-const wordFrom = (letters : string) => 
-  fc.array(fc.constantFrom(...letters), { minLength: 5, maxLength: 5}).map(cs => cs.join(''));
+// Step 1: a generator for five-letter uppercase words.
+// const word = ...
+
+const wordFrom = (letters: string) =>
+  fc.array(fc.constantFrom(...letters), { minLength: 5, maxLength: 5 }).map(cs => cs.join(''));
 const word = wordFrom(ALPHABET);
 
-it("returns exactly 5 colors"), () => {
+// pattern: invariant. the result always has exactly five colors.
+it('returns exactly five colors', () => {
   fc.assert(
     fc.property(word, word, (secret, guess) => {
-      expect(matchGuess(secret, guess)).toHaveLength(5); 
+      expect(matchGuess(secret, guess)).toHaveLength(5);
     }),
   );
-}; 
+});
 
-it("only uses tcolors GYB"), () => {
+// pattern: invariant. the result always only has green, yellow, or black.
+it('only uses the colors G, Y, B', () => {
   fc.assert(
     fc.property(word, word, (secret, guess) => {
-      expect(matchGuess(secret, guess)).toHaveLength(5); 
-      for (const c of matchGuess(secret, guess)) expect(['G', 'Y', 'B']).toContain(c); 
+      for (const c of matchGuess(secret, guess)) expect (['G', 'Y', 'B']).toContain(c);
     }),
   );
-}
+});
 
-it("guess secret word gives all greens"), () => {
+// pattern: conditional. if the guess is secret, every color is green.
+it('guessing the secret gives all greens', () => {
   fc.assert(
-    fc.property(word, word, (secret, guess) => {
-      expect(matchGuess(secret, guess)).toEqual(['G','G','G','G','G']); 
+    fc.property(word, w => {
+      expect(matchGuess(w, w)).toEqual(['G', 'G', 'G', 'G', 'G']);
     }),
   );
-}
+});
 
-it("returns exactly 5 colors"), () => {
+// pattern: invariant. no letter is credited (G or Y) more times than the secret contains it.
+it('never credits a letter more times than the secret contains it', () => {
   fc.assert(
     fc.property(word, word, (secret, guess) => {
       const result = matchGuess(secret, guess);
       for (const letter of new Set(guess)) {
-        const credited = [...guess].filter((c, i) => c === letter && result[i] !== 'B').length; 
-        const inSecret = [...secret].filter(c => c === letter).length; 
+        const credited = [...guess].filter((c, i) => c === letter && result[i] !== 'B').length;
+        const inSecret = [...secret].filter(c => c === letter).length;
         expect(credited).toBeLessThanOrEqual(inSecret);
       }
     }),
   );
-}
+});
 
 describe('matchGuess', () => {
   it.todo('returns exactly five colors');
@@ -61,3 +66,4 @@ describe('matchGuess', () => {
   it.todo('guessing the secret gives all greens');
   it.todo('never credits a letter more times than the secret contains it');
 });
+
