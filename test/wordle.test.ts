@@ -18,6 +18,9 @@ const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const wordFrom = (letters: string) =>
   fc.array(fc.constantFrom(...letters), { minLength: 5, maxLength: 5 }).map(cs => cs.join(''));
 const word = wordFrom(ALPHABET);
+// A small alphabet makes repeated and shared letters common, so duplicate-letter
+// cases (the tricky part of the spec) show up in most runs.
+const smallWord = wordFrom('ABC');
 
 // pattern: invariant. the result always has exactly five colors.
 it('returns exactly five colors', () => {
@@ -46,15 +49,16 @@ it('guessing the secret gives all greens', () => {
   );
 });
 
-// pattern: invariant. no letter is credited (G or Y) more times than the secret contains it.
-it('never credits a letter more times than the secret contains it', () => {
+// pattern: invariant. each letter is credited (G or Y) exactly min(count in guess, count in secret) times.
+it('credits each letter as many times as both words share it', () => {
   fc.assert(
-    fc.property(word, word, (secret, guess) => {
+    fc.property(smallWord, smallWord, (secret, guess) => {
       const result = matchGuess(secret, guess);
       for (const letter of new Set(guess)) {
         const credited = [...guess].filter((c, i) => c === letter && result[i] !== 'B').length;
+        const inGuess = [...guess].filter(c => c === letter).length;
         const inSecret = [...secret].filter(c => c === letter).length;
-        expect(credited).toBeLessThanOrEqual(inSecret);
+        expect(credited).toBe(Math.min(inGuess, inSecret));
       }
     }),
   );
@@ -64,6 +68,6 @@ describe('matchGuess', () => {
   it.todo('returns exactly five colors');
   it.todo('only uses the colors G, Y, B');
   it.todo('guessing the secret gives all greens');
-  it.todo('never credits a letter more times than the secret contains it');
+  it.todo('credits each letter as many times as both words share it');
 });
 
